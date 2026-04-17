@@ -1,28 +1,29 @@
-# src/mybash/Makefile
+# src/mybash/Makefile - 硬编码链接版
 
-CC = gcc
-CFLAGS = -Wall -I../../include
+CC ?= gcc
+CFLAGS ?= -Wall -I../../include
 
-# 可执行文件名
 TARGET := mybash
-# 最终输出到 BINDIR（比如 ./bin/）
-BINDIR ?= ./bin
-# 中间文件目录（比如 ./obj/src/mybash/）
 OBJDIR ?= ./obj
-LINKLIBS ?= -L../../obj/mysed -L../../obj/mywc -L../../obj/mytrans -L../../obj/myfile
 
-# 源文件
 SRCS := main.c
-OBJS := $(SRCS:.c=.o)
-OBJS := $(patsubst %.o,$(OBJDIR)/%.o,$(OBJS))
+OBJS := $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 
-# 最终二进制路径
-TARGET_PATH := $(BINDIR)/$(TARGET)
+all: $(PWD)/bin/mybash
 
-all: $(TARGET_PATH)
+# 创建目录
+$(PWD)/bin $(OBJDIR):
+	@mkdir -p $@
 
-# TODO: 在这里添加你的代码
-# I AM NOT DONE
+# 编译 .o
+$(OBJDIR)/%.o: %.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# 链接 —— 使用顶层传来的完整命令（一行写死）
+$(PWD)/bin/mybash: $(OBJS) | $(PWD)/bin
+	$(LINKCMD)
 
 clean:
-	@rm -rf $(OBJDIR)/*.o $(TARGET_PATH)
+	@rm -rf $(OBJDIR) $(PWD)/bin/mybash
+
+.PHONY: all clean
