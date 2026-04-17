@@ -4,6 +4,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+static char *dup_string(const char *src) {
+  size_t len;
+  char *dst;
+
+  if (src == NULL) {
+    return NULL;
+  }
+
+  len = strlen(src) + 1;
+  dst = (char *)malloc(len);
+  if (dst == NULL) {
+    return NULL;
+  }
+
+  memcpy(dst, src, len);
+  return dst;
+}
+
 // djb2 哈希函数（经典字符串哈希，分布均匀）
 unsigned long hash_function(const char *str) {
   unsigned long hash = 5381;
@@ -56,26 +74,27 @@ int hash_table_insert(HashTable *table, const char *key, const char *value) {
   unsigned long hash = hash_function(key) % HASH_TABLE_SIZE;
   HashNode *node = table->buckets[hash];
 
-  // 检查是否已存在该键
+    // TODO: 在这里添加你的代码
   while (node) {
     if (strcmp(node->key, key) == 0) {
-      // 键已存在，更新值
+      char *new_value = dup_string(value);
+      if (!new_value) {
+        return 0;
+      }
       free(node->value);
-      node->value = strdup(value);
+      node->value = new_value;
       return 1;
     }
     node = node->next;
   }
 
-  // 键不存在，创建新节点
   HashNode *new_node = (HashNode *)malloc(sizeof(HashNode));
   if (!new_node) {
     return 0;
   }
 
-  // 复制键和值
-  new_node->key = strdup(key);
-  new_node->value = strdup(value);
+  new_node->key = dup_string(key);
+  new_node->value = dup_string(value);
   if (!new_node->key || !new_node->value) {
     free(new_node->key);
     free(new_node->value);
@@ -83,7 +102,6 @@ int hash_table_insert(HashTable *table, const char *key, const char *value) {
     return 0;
   }
 
-  // 插入到链表头部
   new_node->next = table->buckets[hash];
   table->buckets[hash] = new_node;
 
@@ -98,10 +116,10 @@ const char *hash_table_lookup(HashTable *table, const char *key) {
   unsigned long hash = hash_function(key) % HASH_TABLE_SIZE;
   HashNode *node = table->buckets[hash];
 
-  // 在链表中查找键
+    // TODO: 在这里添加你的代码
   while (node) {
     if (strcmp(node->key, key) == 0) {
-      return node->value; // 找到键，返回对应的值
+      return node->value;
     }
     node = node->next;
   }

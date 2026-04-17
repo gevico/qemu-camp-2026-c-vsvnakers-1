@@ -1,7 +1,7 @@
 # src/mytrans/Makefile
 
-CC = gcc
-CFLAGS = -Wall -I../../include
+CC ?= gcc
+CFLAGS ?= -Wall -Wextra -std=c11 -I../../include
 
 # 库名称
 LIBNAME := mytrans
@@ -19,18 +19,14 @@ OBJS := $(patsubst %.o,$(OBJDIR)/%.o,$(OBJS))
 
 all: $(LIB_PATH)
 
-# 创建目标目录
-$(OBJDIR):
-	@mkdir -p $(OBJDIR)
-
-# 编译 .c 文件为 .o 文件
-$(OBJDIR)/%.o: %.c $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# 创建静态库
+# TODO: 在这里添加你的代码
 $(LIB_PATH): $(OBJS)
+	@mkdir -p $(OBJDIR)
 	ar rcs $@ $^
 
-# 清理生成的文件
+$(OBJDIR)/%.o: %.c
+	@mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 clean:
 	@rm -rf $(OBJDIR)/*.o $(LIB_PATH)

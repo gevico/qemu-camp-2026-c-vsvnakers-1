@@ -9,6 +9,33 @@
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
 
+static char *dup_string(const char *src) {
+  size_t len;
+  char *dst;
+
+  if (src == NULL) {
+    return NULL;
+  }
+
+  len = strlen(src) + 1;
+  dst = (char *)malloc(len);
+  if (dst == NULL) {
+    return NULL;
+  }
+
+  memcpy(dst, src, len);
+  return dst;
+}
+
+static void free_args(char **args, int argc) {
+  int i;
+
+  for (i = 0; i < argc; i++) {
+    free(args[i]);
+    args[i] = NULL;
+  }
+}
+
 // ======================
 // 自定义命令系统
 // ======================
@@ -58,13 +85,12 @@ int is_builtin_command(char **args) {
   if (args[0] == NULL)
     return 0;
 
-  // 检查 cd 命令
+  // TODO: 在这里添加你的代码
   if (strcmp(args[0], "cd") == 0) {
     execute_cd(args);
     return 1;
   }
 
-  // 检查 exit 命令
   if (strcmp(args[0], "exit") == 0) {
     execute_exit();
     return 1;
@@ -85,22 +111,25 @@ int parse_input(char *input, char **args) {
   while (*buf != '\0' && i < MAX_ARGS - 1) {
       char c = *buf;
 
+        // TODO: 在这里添加你的代码
       if (c == '"') {
-          // 切换引号状态
-          in_quotes = !in_quotes;
-      } else if (c == ' ' && !in_quotes) {
-          // 空格且不在引号内，结束当前参数
-          if (arg_buf_idx > 0) {
-              arg_buf[arg_buf_idx] = '\0';
-              args[i++] = strdup(arg_buf);
-              arg_buf_idx = 0;
-              memset(arg_buf, 0, sizeof(arg_buf));
+        in_quotes = !in_quotes;
+      } else if ((c == ' ' || c == '\t') && !in_quotes) {
+        if (arg_buf_idx > 0) {
+          arg_buf[arg_buf_idx] = '\0';
+          args[i] = dup_string(arg_buf);
+          if (args[i] == NULL) {
+            free_args(args, i);
+            args[0] = NULL;
+            return 0;
           }
+          i++;
+          arg_buf_idx = 0;
+        }
       } else {
-          // 其他字符，添加到当前参数
-          if (arg_buf_idx < MAX_INPUT - 1) {
-              arg_buf[arg_buf_idx++] = c;
-          }
+        if (arg_buf_idx < MAX_INPUT - 1) {
+          arg_buf[arg_buf_idx++] = c;
+        }
       }
 
       buf++;
@@ -109,7 +138,13 @@ int parse_input(char *input, char **args) {
   // 处理最后一个参数（循环结束后可能还有未加入的）
   if (arg_buf_idx > 0) {
       arg_buf[arg_buf_idx] = '\0';
-      args[i++] = strdup(arg_buf);
+      args[i] = dup_string(arg_buf);
+      if (args[i] == NULL) {
+        free_args(args, i);
+        args[0] = NULL;
+        return 0;
+      }
+      i++;
   }
 
   args[i] = NULL;  // exec-style NULL结尾
@@ -147,6 +182,7 @@ int main(int argc, char *argv[]) {
 
       // 处理内置命令
       if (is_builtin_command(args)) {
+        free_args(args, argc_parsed);
         continue;
       }
 
@@ -177,6 +213,8 @@ int main(int argc, char *argv[]) {
       if (!found) {
         fprintf(stderr, "mybash: command not found: %s\n", cmd_name);
       }
+
+      free_args(args, argc_parsed);
     }
 
     fclose(file);
@@ -202,11 +240,13 @@ int main(int argc, char *argv[]) {
       }
 
       if (is_builtin_command(args)) {
+        free_args(args, argc);
         continue;
       }
 
       const char *cmd_name = args[0];
-      const char *cmd_arg = (argc >= 2) ? args[1] : NULL;
+      const char *cmd_arg1 = (argc >= 2) ? args[1] : NULL;
+      const char *cmd_arg2 = (argc >= 3) ? args[2] : NULL;
 
       int found = 0;
       for (Command *cmd = commands; cmd->name != NULL; cmd++) {
@@ -215,9 +255,9 @@ int main(int argc, char *argv[]) {
           if (cmd->is_arg_required == 0) {
             cmd->func.func_0();
           } else if (cmd->is_arg_required == 1) {
-            cmd->func.func_1(cmd_arg);
+            cmd->func.func_1(cmd_arg1);
           } else if (cmd->is_arg_required == 2) {
-            cmd->func.func_2(cmd_arg, cmd_arg);
+            cmd->func.func_2(cmd_arg1, cmd_arg2);
           }
           break;
         }
@@ -226,6 +266,8 @@ int main(int argc, char *argv[]) {
       if (!found) {
         fprintf(stderr, "mybash: command not found: %s\n", cmd_name);
       }
+
+      free_args(args, argc);
     }
   }
 

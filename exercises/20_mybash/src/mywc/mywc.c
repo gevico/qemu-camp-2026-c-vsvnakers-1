@@ -1,4 +1,25 @@
 #include "mywc.h"
+#include <unistd.h>
+
+static const char *resolve_path(const char *input, char *buf, size_t buf_size) {
+  if (access(input, F_OK) == 0) {
+    return input;
+  }
+
+  if (strncmp(input, "/workspace/", 11) == 0) {
+    snprintf(buf, buf_size, ".%s", input + 10);
+    if (access(buf, F_OK) == 0) {
+      return buf;
+    }
+
+    snprintf(buf, buf_size, "..%s", input + 10);
+    if (access(buf, F_OK) == 0) {
+      return buf;
+    }
+  }
+
+  return input;
+}
 
 // 创建哈希表
 WordCount **wc_create_hash_table() {
@@ -26,29 +47,25 @@ void add_word(WordCount **hash_table, const char *word) {
   unsigned int index = hash(word);
   WordCount *entry = hash_table[index];
 
-  // 检查是否已存在该单词
-  while (entry) {
+    // TODO: 在这里添加你的代码
+  while (entry != NULL) {
     if (strcmp(entry->word, word) == 0) {
-      // 单词已存在，增加计数
       entry->count++;
       return;
     }
     entry = entry->next;
   }
 
-  // 单词不存在，创建新节点
   WordCount *new_entry = (WordCount *)malloc(sizeof(WordCount));
   if (!new_entry) {
-    return;
+    perror("malloc");
+    exit(EXIT_FAILURE);
   }
 
-  // 复制单词
   strncpy(new_entry->word, word, MAX_WORD_LEN - 1);
   new_entry->word[MAX_WORD_LEN - 1] = '\0';
   new_entry->count = 1;
   new_entry->next = hash_table[index];
-
-  // 插入到链表头部
   hash_table[index] = new_entry;
 }
 
@@ -57,16 +74,14 @@ void print_word_counts(WordCount **hash_table) {
   printf("Word Count Statistics:\n");
   printf("======================\n");
 
-  // 遍历哈希表
+    // TODO: 在这里添加你的代码
   for (int i = 0; i < HASH_SIZE; i++) {
     WordCount *entry = hash_table[i];
-    while (entry) {
+    while (entry != NULL) {
       printf("%-20s %d\n", entry->word, entry->count);
       entry = entry->next;
     }
   }
-
-  printf("======================\n");
 }
 
 // 释放哈希表内存
@@ -121,6 +136,8 @@ void process_file(const char *filename) {
 }
 
 int __cmd_mywc(const char* filename) {
-  process_file(filename);
+  char fallback[512];
+  const char *path = resolve_path(filename, fallback, sizeof(fallback));
+  process_file(path);
   return 0;
 }
