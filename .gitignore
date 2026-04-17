@@ -37,7 +37,6 @@ exercises/*/*
 !exercises/*/*.txt
 !exercises/*/*.md
 !exercises/*/Makefile
-tests/test_*
 !tests/test_*.c
 
 # 测试结果
